@@ -2202,6 +2202,38 @@
       selectedGuest = guest;
       renderPanel();
     }
+
+    // Relationship-aware invitation wording. Invited count includes the
+    // primary guest, so Wife + 2 means the guest and their wife (not two
+    // additional guests).
+    function getInvitationWording(g){
+      const count = Number(g.invited_count) || 0;
+      const rel = String(g.relationship || '').trim().toLowerCase();
+
+      if (count <= 1) return "You're invited to celebrate with us";
+
+      if (rel === 'wife' || rel === 'husband') {
+        const extra = count - 2;
+        const partner = rel;
+        if (extra <= 0) return `You're invited with your ${partner}`;
+        return `You're invited with your ${partner} and ${extra} additional guest${extra === 1 ? '' : 's'}`;
+      }
+
+      if (rel === 'family') {
+        const extra = count - 1;
+        if (extra <= 0) return "You're invited with your family";
+        return `You're invited with your family and ${extra} additional guest${extra === 1 ? '' : 's'}`;
+      }
+
+      if (rel === 'guest') {
+        const extra = count - 1;
+        return `You're invited with ${extra} guest${extra === 1 ? '' : 's'}`;
+      }
+
+      // Member / blank / other relationship: preserve the existing generic
+      // wording rather than making an unsupported assumption.
+      return `You're invited with ${count} guests total`;
+    }
     function backToSearch(){
       selectedGuest = null;
       document.getElementById('rf-panel-zone').innerHTML = '';
@@ -2230,7 +2262,7 @@
         <div class="rf-panel">
           <button class="rf-back-link" id="rf-back-btn">&larr; search again</button>
           <h3>${esc(displayName)}</h3>
-          <p class="rf-invited-line">You're invited with <b>${g.invited_count}</b> ${g.invited_count === 1 ? 'guest' : 'guests'} total</p>
+          <p class="rf-invited-line">${esc(getInvitationWording(g))}</p>
           <p class="rf-q-label">Will you be attending?</p>
           <div class="rf-pill-row" id="rf-attend-row">
             <button class="rf-pill-btn" data-v="yes">Yes, we'll be there</button>
