@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>RSVP — Deshani &amp; Chalitha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Playfair+Display:ital,wght@0,400;0,600;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream-bg:#F8F2E6;
+    --cream-deep:#ECE0C4;
+    --ink:#2E2218;
+    --ink-soft:#5B4C39;
+    --gold:#A9823F;
+    --gold-light:#C9A86A;
+    --gold-deep:#8A6A30;
+    --white-card:#FFFCF5;
+    --line:rgba(169,130,63,0.35);
+    --max-w:480px;
+    --side-accent:var(--gold-deep);
+    --side-tint:#F1E6D2;
+  }
+  [data-side="bride"]{ --side-accent:#A9704F; --side-tint:#F3E4DA; }
+  [data-side="groom"]{ --side-accent:#6E6329; --side-tint:#EDE9CE; }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream-bg);
+    color:var(--ink);
+    font-family:'Montserrat',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{ width:100%; max-width:var(--max-w); padding:44px 22px 60px; }
+
+  .eyebrow{
+    text-align:center;
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    letter-spacing:0.1em;
+    font-size:0.85rem;
+    color:var(--side-accent);
+    margin:0 0 6px;
+  }
+  h1.title{
+    text-align:center;
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:2.1rem;
+    margin:0 0 6px;
+    color:var(--ink);
+  }
+  .subtitle{
+    text-align:center;
+    font-size:0.86rem;
+    color:var(--ink-soft);
+    margin:0 0 8px;
+  }
+  .side-chip{
+    display:flex; align-items:center; gap:6px;
+    margin:14px auto 30px;
+    padding:6px 16px;
+    border-radius:999px;
+    background:var(--side-tint);
+    border:1px solid var(--line);
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--side-accent);
+    font-weight:600;
+    width:fit-content;
+  }
+  .header-wrap{ display:flex; flex-direction:column; align-items:center; }
+  .rule{ width:56px; height:1px; background:var(--line); margin:0 auto 30px; }
+
+  .search-label{
+    display:block;
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:1.05rem;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+    text-align:center;
+  }
+  input[type="text"]{
+    width:100%;
+    padding:15px 18px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--white-card);
+    font-family:'Montserrat',sans-serif;
+    font-size:1rem;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  input[type="text"]:focus{ border-color:var(--side-accent); box-shadow:0 0 0 3px var(--side-tint); }
+  .hint{ text-align:center; font-size:0.78rem; color:var(--ink-soft); opacity:0.7; margin:10px 0 0; }
+
+  .results{ margin-top:16px; display:flex; flex-direction:column; gap:10px; }
+  .result-card{
+    background:var(--white-card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:15px 17px;
+    cursor:pointer;
+    display:flex; align-items:center; gap:13px;
+    transition:transform .15s, box-shadow .15s;
+  }
+  .result-card:hover{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(46,34,24,0.08); }
+  .initial-circle{
+    flex:0 0 auto; width:36px; height:36px; border-radius:50%;
+    background:var(--side-tint); color:var(--side-accent);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Playfair Display',serif; font-weight:600; font-size:0.95rem;
+  }
+  .result-name{ font-family:'Playfair Display',serif; font-size:1.02rem; color:var(--ink); margin:0; }
+  .result-sub{ font-size:0.82rem; color:var(--ink-soft); margin:2px 0 0; }
+  .status-pip{
+    margin-left:auto; font-size:0.64rem; letter-spacing:0.05em; text-transform:uppercase;
+    padding:3px 9px; border-radius:999px; font-weight:600; white-space:nowrap;
+  }
+  .status-pip.yes{ background:#E6EFDD; color:#4C6B34; }
+  .status-pip.no{ background:#F3E1DD; color:#9C4A3A; }
+  .empty-note{ text-align:center; color:var(--ink-soft); font-size:0.92rem; margin-top:18px; opacity:0.85; }
+
+  .panel{
+    background:var(--white-card); border:1px solid var(--line); border-radius:14px;
+    padding:24px 22px; margin-top:20px; animation:riseIn .35s ease;
+  }
+  @keyframes riseIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  .back-link{
+    display:inline-block; font-size:0.8rem; color:var(--ink-soft); cursor:pointer;
+    border:none; background:none; font-family:'Montserrat',sans-serif; padding:0; margin-bottom:14px;
+  }
+  .back-link:hover{ color:var(--side-accent); }
+  .panel h2{ font-family:'Playfair Display',serif; font-size:1.4rem; margin:0 0 4px; color:var(--ink); }
+  .invited-line{ font-size:0.94rem; color:var(--ink-soft); margin:0 0 22px; }
+  .invited-line b{ color:var(--side-accent); }
+  .q-label{ font-size:0.74rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 10px; font-weight:600; }
+  .pill-row{ display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
+  .pill-btn{
+    flex:1 1 auto; padding:14px 14px; border-radius:9px; border:1.5px solid var(--line);
+    background:var(--cream-bg); color:var(--ink); font-family:'Montserrat',sans-serif;
+    font-weight:600; font-size:0.9rem; cursor:pointer; transition:all .15s;
+  }
+  .pill-btn:hover{ border-color:var(--side-accent); }
+  .pill-btn.active{ background:var(--side-accent); border-color:var(--side-accent); color:#FFF9EC; }
+  .pill-btn.small{ flex:0 0 auto; padding:10px 22px; }
+
+  .stepper{ display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+  .stepper button{
+    width:38px; height:38px; border-radius:50%; border:1.5px solid var(--line);
+    background:var(--white-card); color:var(--side-accent); font-size:1.15rem; cursor:pointer; line-height:1;
+  }
+  .stepper button:disabled{ opacity:0.35; cursor:not-allowed; }
+  .stepper-count{ font-family:'Playfair Display',serif; font-size:1.5rem; min-width:32px; text-align:center; color:var(--ink); }
+
+  .submit-btn{
+    width:100%; padding:15px; border-radius:9px; border:none; background:var(--side-accent);
+    color:#FFF9EC; font-family:'Montserrat',sans-serif; font-weight:700; letter-spacing:0.03em;
+    font-size:0.94rem; cursor:pointer; transition:opacity .15s; margin-top:6px;
+  }
+  .submit-btn:hover{ opacity:0.9; }
+  .submit-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .fade-section{ animation:riseIn .3s ease; }
+
+  .thankyou{ text-align:center; padding:8px 4px; }
+  .thankyou .icon{ font-size:2.2rem; margin-bottom:10px; }
+  .thankyou h2{ font-family:'Playfair Display',serif; font-size:1.4rem; margin:0 0 8px; }
+  .thankyou p{ font-size:0.94rem; color:var(--ink-soft); margin:0 0 18px; }
+  .summary-box{
+    background:var(--cream-bg); border-radius:10px; padding:14px 16px; text-align:left;
+    font-size:0.88rem; color:var(--ink-soft); margin-bottom:18px; line-height:1.8;
+  }
+  .summary-box b{ color:var(--ink); }
+  .edit-link{
+    background:none; border:1px solid var(--line); border-radius:8px; color:var(--ink-soft);
+    font-family:'Montserrat',sans-serif; font-size:0.82rem; padding:10px 16px; cursor:pointer;
+  }
+
+  .chooser{ text-align:center; margin-top:26px; }
+  .chooser a{
+    display:block; text-decoration:none; background:var(--white-card); border:1px solid var(--line);
+    border-radius:12px; padding:20px; margin-bottom:14px; font-family:'Playfair Display',serif;
+    font-style:italic; font-size:1.15rem; color:var(--ink); transition:transform .15s;
+  }
+  .chooser a:hover{ transform:translateY(-2px); }
+
+  .loading-dots{ text-align:center; color:var(--ink-soft); font-size:0.85rem; padding:14px 0; }
+  .error-note{ text-align:center; color:#9C4A3A; font-size:0.85rem; margin-top:12px; }
+  .footer-note{
+    text-align:center; margin-top:40px; font-size:0.7rem; color:var(--ink-soft);
+    opacity:0.55; letter-spacing:0.04em;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .panel, .fade-section, .result-card{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+  <div id="app"><div class="loading-dots">loading…</div></div>
+
+<script src="/supabase.umd.js"></script>
+<script>
+/* ============================================================
+   CONFIG — fill these in once your Supabase project is ready
+   (Project → Settings → API → Project URL / anon public key)
+   ============================================================ */
+const SUPABASE_URL = "https://flxztdsvymseuikifpdb.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_tQJ6RzsNObRAizvwLTpiCg__l-r2tje";
+const COUPLE_TITLE = "Deshani & Chalitha";
+
+/* ============================================================ */
+if (!window.supabase){
+  document.body.innerHTML = '<div style="max-width:420px;margin:80px auto;padding:24px;text-align:center;font-family:sans-serif;color:#5B4C39;">Could not load the database library (supabase.umd.js). Please check that this file is deployed alongside rsvp.html, then refresh.</div>';
+  throw new Error('window.supabase failed to load — aborting init');
+}
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const app = document.getElementById('app');
+const params = new URLSearchParams(location.search);
+let side = (params.get('side') || '').toLowerCase();
+if (side !== 'bride' && side !== 'groom') side = null;
+
+let selectedGuest = null;
+let searchTimer = null;
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function initials(name){ return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+function renderChooser(){
+  document.body.removeAttribute('data-side');
+  app.innerHTML = `
+    <div class="header-wrap">
+      <p class="eyebrow">RSVP</p>
+      <h1 class="title">${esc(COUPLE_TITLE)}</h1>
+      <p class="subtitle">Kindly let us know if you'll be joining us</p>
+    </div>
+    <div class="rule"></div>
+    <div class="chooser">
+      <a href="?side=bride">Bride's Side Guest</a>
+      <a href="?side=groom">Groom's Side Guest</a>
+    </div>
+    <p class="footer-note">Please use the link that was shared with you</p>
+  `;
+}
+
+function renderShell(){
+  document.body.setAttribute('data-side', side);
+  const sideLabel = side === 'bride' ? "Bride's Side" : "Groom's Side";
+  app.innerHTML = `
+    <div class="header-wrap">
+      <p class="eyebrow">RSVP</p>
+      <h1 class="title">${esc(COUPLE_TITLE)}</h1>
+      <p class="subtitle">27th of August · 2026</p>
+      <div class="side-chip">${sideLabel}</div>
+    </div>
+    <div class="rule"></div>
+    <div id="search-zone">
+      <label class="search-label">Find your name to begin</label>
+      <input type="text" id="search-input" placeholder="Start typing your name…" autocomplete="off">
+      <p class="hint">Only ${sideLabel.toLowerCase()} guests will appear here</p>
+      <div class="results" id="results"></div>
+    </div>
+    <div id="panel-zone"></div>
+    <p class="footer-note">With love, ${esc(COUPLE_TITLE)}</p>
+  `;
+  document.getElementById('search-input').addEventListener('input', onSearchInput);
+}
+
+function onSearchInput(e){
+  const q = e.target.value.trim();
+  clearTimeout(searchTimer);
+  document.getElementById('panel-zone').innerHTML = '';
+  selectedGuest = null;
+  if (q.length < 2){ document.getElementById('results').innerHTML = ''; return; }
+  searchTimer = setTimeout(() => runSearch(q), 300);
+}
+
+async function runSearch(q){
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = `<p class="loading-dots">searching…</p>`;
+  const { data, error } = await sb.from('guests').select('*').eq('side', side).ilike('name', `%${q}%`).order('name').limit(8);
+  if (error){
+    resultsEl.innerHTML = `<p class="error-note">Couldn't reach the guest list. Please try again in a moment.</p>`;
+    console.error(error); return;
+  }
+  if (!data || data.length === 0){
+    resultsEl.innerHTML = `<p class="empty-note">No match found — please check the spelling, or ask the family if you're on the list.</p>`;
+    return;
+  }
+  resultsEl.innerHTML = data.map(g => {
+    let pip = '';
+    if (g.rsvp_status === 'yes') pip = `<span class="status-pip yes">Responded</span>`;
+    else if (g.rsvp_status === 'no') pip = `<span class="status-pip no">Responded</span>`;
+    const displayName = g.title ? `${g.title} ${g.name}` : g.name;
+    return `
+      <div class="result-card" data-id="${g.id}">
+        <div class="initial-circle">${esc(initials(g.name))}</div>
+        <div><p class="result-name">${esc(displayName)}</p><p class="result-sub">Party of ${g.invited_count}</p></div>
+        ${pip}
+      </div>`;
+  }).join('');
+  resultsEl.querySelectorAll('.result-card').forEach(card => {
+    card.addEventListener('click', () => selectGuest(data.find(g => g.id === card.dataset.id)));
+  });
+}
+
+function selectGuest(guest){
+  selectedGuest = guest;
+  document.getElementById('search-zone').style.display = 'none';
+  renderPanel();
+}
+function backToSearch(){
+  selectedGuest = null;
+  document.getElementById('search-zone').style.display = '';
+  document.getElementById('panel-zone').innerHTML = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('search-input').focus();
+}
+
+let draftAttending = null, draftCount = 1, draftLiquor = null;
+
+function renderPanel(){
+  const g = selectedGuest;
+  draftAttending = g.rsvp_status === 'yes' ? true : (g.rsvp_status === 'no' ? false : null);
+  draftCount = g.attending_count || g.invited_count;
+  draftLiquor = g.liquor || null;
+  const zone = document.getElementById('panel-zone');
+  const displayName = g.title ? `${g.title} ${g.name}` : g.name;
+
+  if (g.rsvp_status){
+    zone.innerHTML = renderAlreadyResponded(g, displayName);
+    document.getElementById('edit-response-btn').addEventListener('click', () => { g.rsvp_status = null; renderPanel(); });
+    document.getElementById('search-again-1').addEventListener('click', backToSearch);
+    return;
+  }
+
+  zone.innerHTML = `
+    <div class="panel">
+      <button class="back-link" id="back-btn">&larr; search again</button>
+      <h2>${esc(displayName)}</h2>
+      <p class="invited-line">You're invited with <b>${g.invited_count}</b> ${g.invited_count === 1 ? 'guest' : 'guests'} total</p>
+      <p class="q-label">Will you be attending?</p>
+      <div class="pill-row" id="attend-row">
+        <button class="pill-btn" data-v="yes">Yes, we'll be there</button>
+        <button class="pill-btn" data-v="no">Sorry, can't make it</button>
+      </div>
+      <div id="conditional-zone"></div>
+      <button class="submit-btn" id="submit-btn" disabled>Confirm RSVP</button>
+    </div>
+  `;
+  document.getElementById('back-btn').addEventListener('click', backToSearch);
+  zone.querySelectorAll('#attend-row .pill-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      draftAttending = btn.dataset.v === 'yes';
+      zone.querySelectorAll('#attend-row .pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderConditional(g);
+      updateSubmitState();
+    });
+  });
+  document.getElementById('submit-btn').addEventListener('click', () => submitRsvp(g));
+}
+
+function renderConditional(g){
+  const zone = document.getElementById('conditional-zone');
+  if (draftAttending === true){
+    draftCount = Math.min(draftCount || g.invited_count, g.invited_count) || g.invited_count;
+    zone.innerHTML = `
+      <div class="fade-section">
+        <p class="q-label">How many of you (out of ${g.invited_count}) will attend?</p>
+        <div class="stepper">
+          <button id="dec-btn" ${draftCount<=1?'disabled':''}>−</button>
+          <span class="stepper-count" id="count-display">${draftCount}</span>
+          <button id="inc-btn" ${draftCount>=g.invited_count?'disabled':''}>+</button>
+        </div>
+        <p class="q-label">Will you be having liquor?</p>
+        <div class="pill-row" id="liquor-row">
+          <button class="pill-btn small ${draftLiquor==='yes'?'active':''}" data-v="yes">Yes</button>
+          <button class="pill-btn small ${draftLiquor==='no'?'active':''}" data-v="no">No</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('dec-btn').addEventListener('click', () => { draftCount--; renderConditional(g); updateSubmitState(); });
+    document.getElementById('inc-btn').addEventListener('click', () => { draftCount++; renderConditional(g); updateSubmitState(); });
+    zone.querySelectorAll('#liquor-row .pill-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        draftLiquor = btn.dataset.v;
+        zone.querySelectorAll('#liquor-row .pill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateSubmitState();
+      });
+    });
+  } else if (draftAttending === false){
+    zone.innerHTML = `<div class="fade-section"><p class="empty-note" style="margin-top:4px">We'll miss you — thank you for letting us know.</p></div>`;
+  } else { zone.innerHTML = ''; }
+}
+
+function updateSubmitState(){
+  const btn = document.getElementById('submit-btn');
+  if (draftAttending === false){ btn.disabled = false; return; }
+  if (draftAttending === true && draftLiquor){ btn.disabled = false; return; }
+  btn.disabled = true;
+}
+
+async function submitRsvp(g){
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const payload = {
+    rsvp_status: draftAttending ? 'yes' : 'no',
+    attending_count: draftAttending ? draftCount : null,
+    liquor: draftAttending ? draftLiquor : null,
+    responded_at: new Date().toISOString()
+  };
+  const { error } = await sb.from('guests').update(payload).eq('id', g.id);
+  if (error){
+    btn.disabled = false; btn.textContent = 'Confirm RSVP';
+    document.getElementById('panel-zone').insertAdjacentHTML('beforeend', `<p class="error-note">Something went wrong saving your response — please try again.</p>`);
+    console.error(error); return;
+  }
+  Object.assign(g, payload);
+  const displayName = g.title ? `${g.title} ${g.name}` : g.name;
+  document.getElementById('panel-zone').innerHTML = renderAlreadyResponded(g, displayName);
+  document.getElementById('edit-response-btn').addEventListener('click', () => { g.rsvp_status = null; renderPanel(); });
+  document.getElementById('search-again-1').addEventListener('click', backToSearch);
+}
+
+function renderAlreadyResponded(g, displayName){
+  const firstName = g.name.split(' ')[0];
+  if (g.rsvp_status === 'yes'){
+    return `
+      <div class="panel thankyou">
+        <div class="icon">💍</div>
+        <h2>Thank you, ${esc(firstName)}!</h2>
+        <p>We've saved your response.</p>
+        <div class="summary-box">
+          <div>Attending: <b>Yes</b></div>
+          <div>Guests coming: <b>${g.attending_count}</b> of ${g.invited_count}</div>
+          <div>Liquor: <b>${g.liquor === 'yes' ? 'Yes' : 'No'}</b></div>
+        </div>
+        <div class="pill-row">
+          <button class="edit-link" id="edit-response-btn">Edit response</button>
+          <button class="edit-link" id="search-again-1">Search again</button>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="panel thankyou">
+      <div class="icon">💌</div>
+      <h2>Thanks for letting us know</h2>
+      <p>We'll miss you, ${esc(firstName)}.</p>
+      <div class="pill-row">
+        <button class="edit-link" id="edit-response-btn">Edit response</button>
+        <button class="edit-link" id="search-again-1">Search again</button>
+      </div>
+    </div>`;
+}
+
+if (!side){ renderChooser(); } else { renderShell(); }
+</script>
+</body>
+</html>

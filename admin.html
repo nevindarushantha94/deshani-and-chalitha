@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSVP Dashboard — Deshani &amp; Chalitha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Playfair+Display:ital,wght@0,600;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream-bg:#F8F2E6; --white-card:#FFFCF5; --ink:#2E2218; --ink-soft:#5B4C39;
+    --gold:#A9823F; --gold-light:#C9A86A; --gold-deep:#8A6A30; --line:rgba(169,130,63,0.3);
+    --green:#4C6B34; --green-bg:#E6EFDD; --red:#9C4A3A; --red-bg:#F3E1DD;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--cream-bg); color:var(--ink);
+    font-family:'Montserrat',sans-serif; -webkit-font-smoothing:antialiased;
+  }
+
+  /* consistent focus treatment everywhere (replaces bare outline:none) */
+  input:focus-visible, select:focus-visible, button:focus-visible, .chip:focus-visible{
+    outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(169,130,63,0.18);
+  }
+
+  #gate{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .gate-card{
+    background:var(--white-card); border:1px solid var(--line); border-radius:14px;
+    padding:34px 28px; max-width:340px; width:100%; text-align:center;
+  }
+  .gate-card h1{ font-family:'Playfair Display',serif; font-style:italic; font-size:1.4rem; margin:0 0 18px; }
+  .gate-card input{
+    width:100%; padding:13px 14px; border-radius:8px; border:1px solid var(--line);
+    font-family:'Montserrat',sans-serif; font-size:0.95rem; margin-bottom:12px; outline:none;
+  }
+  .gate-card input:focus{ border-color:var(--gold); }
+  .gate-card button{
+    width:100%; padding:13px; border-radius:8px; border:none; background:var(--gold-deep);
+    color:#FFF9EC; font-weight:700; cursor:pointer; font-size:0.9rem; letter-spacing:0.03em;
+  }
+  .gate-error{ color:var(--red); font-size:0.82rem; margin-top:10px; display:none; }
+
+  #dash{ display:none; max-width:1100px; margin:0 auto; padding:28px 18px 60px; }
+
+  /* ---------- HEADER ---------- */
+  header.top{
+    display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+    gap:14px; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid var(--line);
+  }
+  header.top h1{ font-family:'Playfair Display',serif; font-style:italic; font-size:1.55rem; margin:0 0 4px; }
+  header.top .sub{ font-size:0.82rem; color:var(--ink-soft); letter-spacing:0.01em; }
+  .status-block{ text-align:right; }
+  .live-pill{
+    display:inline-flex; align-items:center; gap:6px; font-size:0.72rem; font-weight:700;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--green); background:var(--green-bg);
+    padding:5px 11px 5px 9px; border-radius:999px;
+  }
+  .live-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--green);
+    animation:livePulse 2.2s ease-in-out infinite;
+  }
+  @keyframes livePulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(76,107,52,0.4); }
+    50%{ box-shadow:0 0 0 5px rgba(76,107,52,0); }
+  }
+  .live-caption{ font-size:0.7rem; color:var(--ink-soft); opacity:0.75; margin-top:5px; }
+  .sync-note{ font-size:0.68rem; color:var(--ink-soft); opacity:0.6; margin-top:2px; }
+
+  /* ---------- KPI CARDS ---------- */
+  .kpi-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .kpi{ background:var(--white-card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .kpi .num{ font-family:'Playfair Display',serif; font-size:1.9rem; color:var(--gold-deep); font-weight:600; line-height:1.1; }
+  .kpi .label{ font-size:0.7rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-top:4px; }
+
+  /* ---------- RESPONSE PROGRESS ---------- */
+  .progress-card{
+    background:var(--white-card); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; margin-bottom:20px;
+  }
+  .progress-head{
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px;
+    margin-bottom:10px;
+  }
+  .progress-title{ font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; }
+  .progress-figures{ font-size:0.82rem; color:var(--ink-soft); }
+  .progress-figures strong{ color:var(--gold-deep); }
+  .progress-track{ height:8px; border-radius:999px; background:var(--cream-bg); overflow:hidden; }
+  .progress-fill{
+    height:100%; border-radius:999px; background:linear-gradient(90deg, var(--gold-light), var(--gold-deep));
+    transition:width 0.4s ease;
+  }
+  .progress-pct{ font-size:0.72rem; color:var(--ink-soft); margin-top:6px; text-align:right; }
+
+  /* ---------- SIDE SUMMARY ---------- */
+  .side-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; }
+  @media (max-width:520px){ .side-grid{ grid-template-columns:1fr; } }
+  .side-card{ background:var(--white-card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .side-card h3{
+    margin:0 0 10px; font-family:'Playfair Display',serif; font-style:italic; font-size:1.02rem;
+    color:var(--ink); font-weight:600;
+  }
+  .side-stats{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px 14px; }
+  .side-stat .n{ font-size:1.15rem; font-weight:700; color:var(--gold-deep); }
+  .side-stat .l{ font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); }
+
+  /* ---------- FILTERS ---------- */
+  .filters-row{ display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+  .chip-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .chip{
+    padding:8px 15px; border-radius:999px; border:1px solid var(--line); background:var(--white-card);
+    color:var(--ink-soft); font-size:0.78rem; font-weight:600; cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .chip.active{ background:var(--gold-deep); border-color:var(--gold-deep); color:#FFF9EC; }
+  .chip-label{ font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); opacity:0.7; margin-right:2px; }
+
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+  .toolbar input[type="text"]{
+    flex:1 1 200px; padding:10px 14px; border-radius:8px; border:1px solid var(--line);
+    font-family:'Montserrat',sans-serif; font-size:0.88rem;
+  }
+  .btn{
+    padding:10px 16px; border-radius:8px; border:1px solid var(--gold); background:var(--white-card);
+    color:var(--gold-deep); font-weight:600; font-size:0.82rem; cursor:pointer; white-space:nowrap;
+  }
+  .btn:hover{ background:rgba(169,130,63,0.08); }
+  .btn.primary{ background:var(--gold-deep); border-color:var(--gold-deep); color:#FFF9EC; }
+  .btn.primary:hover{ opacity:0.9; background:var(--gold-deep); }
+  .btn.danger{ border-color:var(--red); color:var(--red); }
+  .btn.danger:hover{ background:rgba(156,74,58,0.08); }
+  .btn.ghost{ border-color:var(--line); color:var(--ink-soft); }
+
+  /* ---------- TABLE ---------- */
+  .table-wrap{ background:var(--white-card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  table{ width:100%; border-collapse:collapse; font-size:0.85rem; }
+  thead th{
+    text-align:left; padding:12px 14px; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); background:rgba(169,130,63,0.06);
+    white-space:nowrap;
+  }
+  tbody td{ padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:rgba(169,130,63,0.04); }
+
+  .pill{ display:inline-flex; align-items:center; gap:5px; font-size:0.7rem; padding:4px 10px; border-radius:999px; font-weight:600; white-space:nowrap; }
+  .pill.yes{ background:var(--green-bg); color:var(--green); }
+  .pill.no{ background:var(--red-bg); color:var(--red); }
+  .pill.pending{ background:#EFE7D3; color:var(--ink-soft); }
+  .pill-dot{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .pill.yes .pill-dot{ background:var(--green); }
+  .pill.no .pill-dot{ background:var(--red); }
+  .pill.pending .pill-dot{ background:#B79A5E; }
+
+  .badge{ display:inline-block; font-size:0.72rem; padding:3px 10px; border-radius:6px; font-weight:600; }
+  .badge.yes{ background:var(--green-bg); color:var(--green); }
+  .badge.no{ background:var(--red-bg); color:var(--red); }
+  .badge.muted{ color:var(--ink-soft); opacity:0.45; font-weight:500; }
+
+  .row-actions{ display:flex; gap:4px; flex-wrap:wrap; }
+  .icon-btn{
+    border:none; background:none; cursor:pointer; color:var(--ink-soft); font-size:0.92rem; padding:6px;
+    border-radius:6px; line-height:1;
+  }
+  .icon-btn:hover{ color:var(--gold-deep); background:rgba(169,130,63,0.08); }
+  .icon-btn.danger:hover{ color:var(--red); background:rgba(156,74,58,0.08); }
+
+  .msg-btn{ font-size:0.78rem; white-space:nowrap; border:none; background:none; color:var(--gold-deep); cursor:pointer; font-weight:600; padding:4px 0; }
+  .msg-btn:hover{ text-decoration:underline; }
+
+  .empty-state{ padding:44px 20px; text-align:center; color:var(--ink-soft); font-size:0.9rem; }
+  .loading{ text-align:center; padding:30px; color:var(--ink-soft); font-size:0.85rem; }
+
+  /* ---------- mobile: table rows become guest cards, no horizontal scroll ---------- */
+  @media (max-width:720px){
+    table, thead, tbody, tr, td{ display:block; width:100%; }
+    thead{ display:none; }
+    tbody tr{
+      border:1px solid var(--line); border-radius:12px; padding:14px 14px 10px; margin:12px;
+      background:var(--white-card);
+    }
+    tbody tr:hover{ background:var(--white-card); }
+    tbody td{ border:none; padding:6px 2px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    tbody td::before{
+      content:attr(data-label); font-size:0.66rem; font-weight:700; letter-spacing:0.05em;
+      text-transform:uppercase; color:var(--ink-soft); opacity:0.7; flex-shrink:0;
+    }
+    tbody td.cell-name{ padding-top:0; }
+    tbody td.cell-name::before{ display:none; }
+    tbody td.cell-name{ font-family:'Playfair Display',serif; font-style:italic; font-size:1.05rem; justify-content:flex-start; }
+    tbody td.cell-actions{ padding-top:10px; margin-top:6px; border-top:1px solid var(--line); }
+    tbody td.cell-actions::before{ display:none; }
+    tbody td.cell-actions .row-actions{ width:100%; justify-content:flex-end; }
+  }
+
+  /* ---------- MODALS ---------- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(46,34,24,0.45);
+    align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-card{
+    background:var(--white-card); border:1px solid var(--line); border-radius:14px;
+    padding:26px 24px; max-width:420px; width:100%;
+    animation:modalIn 0.2s ease;
+  }
+  @keyframes modalIn{
+    from{ opacity:0; transform:translateY(6px) scale(0.98); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  .modal-title{
+    font-family:'Playfair Display',serif; font-style:italic; font-size:1.15rem;
+    color:var(--ink); margin:0 0 6px;
+  }
+  .modal-body{ font-size:0.88rem; color:var(--ink-soft); line-height:1.55; margin-bottom:18px; }
+  .modal-body strong{ color:var(--ink); }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; }
+
+  .msg-modal-eyebrow{ font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); opacity:0.7; margin-bottom:4px; }
+  .msg-modal-name{
+    font-family:'Playfair Display',serif; font-style:italic; font-size:1.1rem;
+    color:var(--ink); margin-bottom:12px;
+  }
+  .msg-modal-text{
+    font-family:'Cormorant Garamond',serif; font-size:1.05rem; color:var(--ink-soft);
+    line-height:1.7; white-space:pre-wrap; word-break:break-word;
+    background:var(--cream-bg); border-radius:10px; padding:14px 16px; margin-bottom:18px;
+    max-height:280px; overflow-y:auto;
+  }
+  .msg-modal-text.empty{ font-style:italic; opacity:0.7; }
+
+  .form-field{ margin-bottom:14px; text-align:left; }
+  .form-field label{ display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px; }
+  .form-field input, .form-field select{
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+    font-family:'Montserrat',sans-serif; font-size:0.9rem; background:#fff;
+  }
+
+  @media (max-width:640px){
+    header.top{ align-items:flex-start; }
+    .status-block{ text-align:left; }
+  }
+
+  /* ---------- SELECT / BULK ACTIONS ---------- */
+  .th-name-wrap{ display:inline-flex; align-items:center; gap:8px; }
+  .row-select{ display:inline-flex; align-items:center; gap:9px; cursor:pointer; }
+  .row-select input[type="checkbox"], .th-name-wrap input[type="checkbox"]{
+    width:16px; height:16px; accent-color:var(--gold-deep); cursor:pointer; flex-shrink:0;
+  }
+
+  .bulk-bar{
+    display:none; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:var(--gold-deep); color:#FFF9EC; border-radius:12px; padding:12px 18px; margin-bottom:14px;
+  }
+  .bulk-bar.visible{ display:flex; }
+  .bulk-bar .count{ font-size:0.85rem; font-weight:600; }
+  .bulk-bar .btn.danger{
+    background:rgba(255,249,236,0.12); border-color:rgba(255,249,236,0.5); color:#FFF9EC;
+  }
+  .bulk-bar .btn.danger:hover{ background:rgba(255,249,236,0.2); }
+  .bulk-bar .btn.ghost{ border-color:rgba(255,249,236,0.5); color:#FFF9EC; background:none; }
+  .bulk-bar .btn.ghost:hover{ background:rgba(255,249,236,0.12); }
+
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(0);
+    background:var(--ink); color:#FFF9EC; padding:11px 20px; border-radius:999px;
+    font-size:0.82rem; font-weight:600; z-index:200; opacity:0; pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+  }
+  .toast.visible{ opacity:1; transform:translateX(-50%) translateY(-6px); }
+
+  /* ---------- IMPORT MODAL ---------- */
+  .import-modal-card{ max-width:640px; }
+  .import-step-title{
+    font-family:'Playfair Display',serif; font-style:italic; font-size:1.15rem; color:var(--ink); margin:0 0 14px;
+  }
+  .import-dropzone{
+    border:1.5px dashed var(--line); border-radius:12px; padding:28px 20px; text-align:center;
+    color:var(--ink-soft); font-size:0.85rem; margin-bottom:14px; background:var(--cream-bg);
+  }
+  .import-dropzone input[type="file"]{ margin-top:10px; font-size:0.82rem; }
+  .import-template-link{
+    display:inline-block; font-size:0.8rem; color:var(--gold-deep); font-weight:600; cursor:pointer;
+    text-decoration:underline; background:none; border:none; padding:0;
+  }
+  .import-summary-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .import-summary-chip{
+    flex:1 1 100px; background:var(--cream-bg); border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; text-align:center;
+  }
+  .import-summary-chip .n{ font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--gold-deep); font-weight:600; }
+  .import-summary-chip .l{ font-size:0.65rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); margin-top:2px; }
+
+  .import-preview-wrap{ max-height:280px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; margin-bottom:16px; }
+  .import-preview-wrap table{ width:100%; border-collapse:collapse; font-size:0.78rem; }
+  .import-preview-wrap th{
+    position:sticky; top:0; background:var(--cream-bg); text-align:left; padding:8px 10px;
+    font-size:0.65rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); border-bottom:1px solid var(--line);
+  }
+  .import-preview-wrap td{ padding:7px 10px; border-bottom:1px solid var(--line); }
+  .import-preview-wrap tr:last-child td{ border-bottom:none; }
+  .import-status-badge{ font-size:0.68rem; padding:2px 8px; border-radius:999px; font-weight:600; white-space:nowrap; }
+  .import-status-badge.valid{ background:var(--green-bg); color:var(--green); }
+  .import-status-badge.invalid{ background:var(--red-bg); color:var(--red); }
+  .import-status-badge.dup{ background:#F3E7CE; color:var(--gold-deep); }
+  .import-reason{ font-size:0.72rem; color:var(--ink-soft); opacity:0.8; margin-top:2px; }
+
+  .import-result-icon{ font-size:2rem; text-align:center; margin-bottom:6px; }
+  .import-result-text{ text-align:center; margin-bottom:18px; }
+  .import-result-text .big{ font-family:'Playfair Display',serif; font-size:1.15rem; color:var(--ink); margin-bottom:4px; }
+  .import-result-text .small{ font-size:0.82rem; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card">
+    <h1>RSVP Dashboard</h1>
+    <input type="password" id="pw-input" placeholder="Admin password">
+    <button id="pw-submit">Enter</button>
+    <p class="gate-error" id="gate-error">Incorrect password.</p>
+  </div>
+</div>
+
+<div id="dash">
+  <header class="top">
+    <div>
+      <h1>Deshani &amp; Chalitha — RSVP Dashboard</h1>
+      <div class="sub">27th August · 2026 · Clover Banquet &amp; Resort, Kelaniya</div>
+    </div>
+    <div class="status-block">
+      <span class="live-pill"><span class="live-dot"></span> Live</span>
+      <div class="live-caption">Updates automatically</div>
+      <div class="sync-note" id="syncNote"></div>
+    </div>
+  </header>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="progress-card">
+    <div class="progress-head">
+      <span class="progress-title">RSVP Response Progress</span>
+      <span class="progress-figures" id="progressFigures"></span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-pct" id="progressPct"></div>
+  </div>
+
+  <div class="side-grid">
+    <div class="side-card">
+      <h3>Bride's Side</h3>
+      <div class="side-stats" id="brideStats"></div>
+    </div>
+    <div class="side-card">
+      <h3>Groom's Side</h3>
+      <div class="side-stats" id="groomStats"></div>
+    </div>
+  </div>
+
+  <div class="filters-row">
+    <div class="chip-row" id="sideTabs">
+      <span class="chip-label">Side</span>
+      <button class="chip active" data-side="all">All</button>
+      <button class="chip" data-side="bride">Bride</button>
+      <button class="chip" data-side="groom">Groom</button>
+    </div>
+    <div class="chip-row" id="statusChips">
+      <span class="chip-label">Status</span>
+      <button class="chip active" data-status="all">All</button>
+      <button class="chip" data-status="pending">Pending</button>
+      <button class="chip" data-status="yes">Attending</button>
+      <button class="chip" data-status="no">Declined</button>
+      <button class="chip" data-status="liquor">Liquor</button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="filterInput" placeholder="Filter by name…">
+    <button class="btn primary" id="openAddBtn">+ Add Guest</button>
+    <button class="btn" id="openImportBtn">📥 Import Guest List</button>
+    <button class="btn primary" id="exportXlsxBtn">📊 Download RSVP Excel Report</button>
+    <button class="btn" id="exportBtn">Export CSV (Raw)</button>
+  </div>
+
+  <div class="bulk-bar" id="bulkBar">
+    <span class="count" id="bulkCount">0 guests selected</span>
+    <div style="display:flex; gap:8px;">
+      <button class="btn ghost" id="bulkClearBtn">Clear</button>
+      <button class="btn danger" id="bulkDeleteBtn">🗑 Delete Selected</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div id="tableZone"><div class="loading">Loading guests…</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Message modal -->
+<div id="msgModalOverlay" class="modal-overlay">
+  <div class="modal-card">
+    <div class="msg-modal-eyebrow">Message From</div>
+    <div class="msg-modal-name" id="msgModalName"></div>
+    <div class="msg-modal-text" id="msgModalText"></div>
+    <div class="modal-actions">
+      <button class="btn primary" id="msgModalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit guest modal -->
+<div id="guestFormOverlay" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title" id="guestFormTitle">Add Guest</div>
+    <div class="form-field">
+      <label for="gf-name">Guest Name</label>
+      <input type="text" id="gf-name" placeholder="e.g. Mr Kasun Perera">
+    </div>
+    <div class="form-field">
+      <label for="gf-count">Number of Guests</label>
+      <input type="number" id="gf-count" min="1" value="1">
+    </div>
+    <div class="form-field">
+      <label for="gf-side">Side</label>
+      <select id="gf-side">
+        <option value="bride">Bride's Side</option>
+        <option value="groom">Groom's Side</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="gf-relationship">Relationship <span style="font-weight:400; opacity:0.65;">(optional — used in the Excel report)</span></label>
+      <select id="gf-relationship">
+        <option value="">— Not set —</option>
+        <option value="Member">Member</option>
+        <option value="Wife">Wife</option>
+        <option value="Husband">Husband</option>
+        <option value="Family">Family</option>
+        <option value="Guest">Guest</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="guestFormCancel">Cancel</button>
+      <button class="btn primary" id="guestFormSubmit">Add Guest</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Guest List modal — content of #importModalBody is swapped per step by JS -->
+<div id="importModalOverlay" class="modal-overlay">
+  <div class="modal-card import-modal-card">
+    <div id="importModalBody"><!-- populated by renderImportStep() --></div>
+  </div>
+</div>
+
+<!-- Generic confirm modal (delete / reset) -->
+<div id="confirmModalOverlay" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title" id="confirmModalTitle">Are you sure?</div>
+    <div class="modal-body" id="confirmModalBody"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="confirmModalCancel">Cancel</button>
+      <button class="btn danger" id="confirmModalConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="/supabase.umd.js"></script>
+<script>
+/* ============================================================
+   CONFIG — unchanged from the existing panel
+   ============================================================ */
+const SUPABASE_URL = "https://flxztdsvymseuikifpdb.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_tQJ6RzsNObRAizvwLTpiCg__l-r2tje";
+const ADMIN_PASSWORD = "Nevi@1234";
+
+/* ============================================================ */
+if (!window.supabase){
+  document.body.innerHTML = '<div style="max-width:420px;margin:80px auto;padding:24px;text-align:center;font-family:sans-serif;color:#5B4C39;">Could not load the database library (supabase.umd.js). Please check that this file is deployed alongside admin.html, then refresh.</div>';
+  throw new Error('window.supabase failed to load — aborting init');
+}
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let allGuests = [];
+let activeSide = 'all';
+let activeStatus = 'all';
+let filterText = '';
+let editingGuestId = null; // null while Add Guest modal is open, guest id while Edit modal is open
+let selectedIds = new Set(); // guest ids currently checked for bulk actions
+
+// side values the import/validation code accepts today — extend this one
+// array (and the Side <select> options) if another side is confirmed later
+const VALID_SIDES = ['bride', 'groom'];
+
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- gate ---------- */
+document.getElementById('pw-submit').addEventListener('click', tryUnlock);
+document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
+function tryUnlock(){
+  const val = document.getElementById('pw-input').value;
+  if (val === ADMIN_PASSWORD){
+    sessionStorage.setItem('dc-admin-ok', '1');
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    boot();
+  } else {
+    document.getElementById('gate-error').style.display = 'block';
+  }
+}
+if (sessionStorage.getItem('dc-admin-ok') === '1'){
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+  boot();
+}
+
+/* ---------- boot ---------- */
+function boot(){
+  fetchGuests();
+  sb.channel('guests-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, () => fetchGuests())
+    .subscribe();
+
+  document.getElementById('sideTabs').addEventListener('click', e => {
+    const btn = e.target.closest('.chip');
+    if (!btn || !btn.dataset.side) return;
+    activeSide = btn.dataset.side;
+    document.querySelectorAll('#sideTabs .chip').forEach(b => b.classList.toggle('active', b === btn));
+    render();
+  });
+
+  document.getElementById('statusChips').addEventListener('click', e => {
+    const btn = e.target.closest('.chip');
+    if (!btn || !btn.dataset.status) return;
+    activeStatus = btn.dataset.status;
+    document.querySelectorAll('#statusChips .chip').forEach(b => b.classList.toggle('active', b === btn));
+    renderTable();
+  });
+
+  document.getElementById('filterInput').addEventListener('input', e => {
+    filterText = e.target.value.trim().toLowerCase();
+    renderTable();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', exportCsv);
+  document.getElementById('exportXlsxBtn').addEventListener('click', exportXlsxReport);
+
+  // message modal
+  document.getElementById('msgModalClose').addEventListener('click', closeMessageModal);
+  document.getElementById('msgModalOverlay').addEventListener('click', e => {
+    if (e.target.id === 'msgModalOverlay') closeMessageModal();
+  });
+
+  // add/edit guest modal
+  document.getElementById('openAddBtn').addEventListener('click', openAddGuestModal);
+  document.getElementById('guestFormCancel').addEventListener('click', closeGuestFormModal);
+  document.getElementById('guestFormOverlay').addEventListener('click', e => {
+    if (e.target.id === 'guestFormOverlay') closeGuestFormModal();
+  });
+  document.getElementById('guestFormSubmit').addEventListener('click', submitGuestForm);
+
+  // confirm modal (delete / reset / bulk delete)
+  document.getElementById('confirmModalCancel').addEventListener('click', closeConfirmModal);
+  document.getElementById('confirmModalOverlay').addEventListener('click', e => {
+    if (e.target.id === 'confirmModalOverlay') closeConfirmModal();
+  });
+  document.getElementById('confirmModalConfirm').addEventListener('click', () => {
+    const action = pendingConfirmAction;
+    closeConfirmModal();
+    if (action) action();
+  });
+
+  // bulk select / delete
+  document.getElementById('bulkClearBtn').addEventListener('click', clearSelection);
+  document.getElementById('bulkDeleteBtn').addEventListener('click', startBulkDeleteFlow);
+
+  // import guest list
+  document.getElementById('openImportBtn').addEventListener('click', openImportModal);
+  document.getElementById('importModalOverlay').addEventListener('click', e => {
+    if (e.target.id === 'importModalOverlay') closeImportModal();
+  });
+
+  // Escape closes whichever modal is open
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    closeMessageModal();
+    closeGuestFormModal();
+    closeImportModal();
+    closeConfirmModal();
+  });
+}
+
+async function fetchGuests(){
+  const { data, error } = await sb.from('guests').select('*').order('side').order('name');
+  if (error){ document.getElementById('tableZone').innerHTML = `<div class="empty-state">Couldn't load guests. Check your Supabase config.</div>`; console.error(error); return; }
+  allGuests = data || [];
+  const syncNote = document.getElementById('syncNote');
+  if (syncNote) syncNote.textContent = 'Last synced: ' + new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  render();
+}
+
+function render(){
+  renderKpis();
+  renderProgress();
+  renderSideSummary();
+  renderTable();
+}
+
+/* ---------- shared stat calculation ----------
+   headcount fields (invited / attending / liquor) sum invited_count /
+   attending_count across guest entries; pending / declined are counted
+   as guest entries (households), matching how the panel already tracked
+   "Not Responded" / "Declined" before this update. */
+function computeStats(list){
+  const invited = list.reduce((s,g) => s + (g.invited_count || 0), 0);
+  const responded = list.filter(g => g.rsvp_status);
+  const confirmed = list.filter(g => g.rsvp_status === 'yes');
+  const declined = list.filter(g => g.rsvp_status === 'no');
+  const pending = list.length - responded.length;
+  const attendingHeads = confirmed.reduce((s,g) => s + (g.attending_count || 0), 0);
+  const liquorHeads = confirmed.filter(g => g.liquor === 'yes').reduce((s,g) => s + (g.attending_count || 0), 0);
+  return {
+    invited, attendingHeads, pending, declinedCount: declined.length, liquorHeads,
+    respondedCount: responded.length, totalCount: list.length
+  };
+}
+
+function renderKpis(){
+  const scope = activeSide === 'all' ? allGuests : allGuests.filter(g => g.side === activeSide);
+  const s = computeStats(scope);
+  const responseRate = s.totalCount ? Math.round((s.respondedCount / s.totalCount) * 100) : 0;
+
+  const kpis = [
+    { num: s.invited, label: 'Total Invited' },
+    { num: s.attendingHeads, label: 'Attending' },
+    { num: s.pending, label: 'Pending' },
+    { num: s.declinedCount, label: 'Declined' },
+    { num: s.liquorHeads, label: 'Liquor' },
+    { num: responseRate + '%', label: 'Response Rate' },
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+    <div class="kpi"><div class="num">${k.num}</div><div class="label">${k.label}</div></div>
+  `).join('');
+}
+
+function renderProgress(){
+  const scope = activeSide === 'all' ? allGuests : allGuests.filter(g => g.side === activeSide);
+  const s = computeStats(scope);
+  const pct = s.totalCount ? Math.round((s.respondedCount / s.totalCount) * 100) : 0;
+  document.getElementById('progressFigures').innerHTML = `<strong>${s.respondedCount}</strong> responded / ${s.totalCount} invited`;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+function renderSideSummary(){
+  const brideList = allGuests.filter(g => g.side === 'bride');
+  const groomList = allGuests.filter(g => g.side === 'groom');
+  const b = computeStats(brideList);
+  const g = computeStats(groomList);
+
+  const rowsHtml = (s) => `
+    <div class="side-stat"><div class="n">${s.invited}</div><div class="l">Invited</div></div>
+    <div class="side-stat"><div class="n">${s.attendingHeads}</div><div class="l">Attending</div></div>
+    <div class="side-stat"><div class="n">${s.pending}</div><div class="l">Pending</div></div>
+    <div class="side-stat"><div class="n">${s.declinedCount}</div><div class="l">Declined</div></div>
+  `;
+  document.getElementById('brideStats').innerHTML = rowsHtml(b);
+  document.getElementById('groomStats').innerHTML = rowsHtml(g);
+}
+
+function matchesStatusFilter(g){
+  if (activeStatus === 'all') return true;
+  if (activeStatus === 'pending') return !g.rsvp_status;
+  if (activeStatus === 'yes') return g.rsvp_status === 'yes';
+  if (activeStatus === 'no') return g.rsvp_status === 'no';
+  if (activeStatus === 'liquor') return g.liquor === 'yes';
+  return true;
+}
+
+let lastVisibleScope = []; // ids currently rendered — what "select all visible" applies to
+
+function renderTable(){
+  let scope = activeSide === 'all' ? allGuests : allGuests.filter(g => g.side === activeSide);
+  scope = scope.filter(matchesStatusFilter);
+  if (filterText) scope = scope.filter(g => g.name.toLowerCase().includes(filterText));
+
+  // selections on guests that no longer exist (e.g. deleted elsewhere) are dropped silently
+  const stillValidIds = new Set(allGuests.map(g => g.id));
+  Array.from(selectedIds).forEach(id => { if (!stillValidIds.has(id)) selectedIds.delete(id); });
+
+  lastVisibleScope = scope.map(g => g.id);
+
+  const zone = document.getElementById('tableZone');
+  if (scope.length === 0){
+    zone.innerHTML = `<div class="empty-state">No guests found.</div>`;
+    updateBulkBar();
+    return;
+  }
+
+  zone.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th><span class="th-name-wrap"><input type="checkbox" id="selectAllChk" title="Select all visible"> Name</span></th><th>Side</th><th>Invited</th><th>Status</th><th>Attending</th><th>Liquor</th><th>Message</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${scope.map(g => rowHtml(g)).join('')}
+      </tbody>
+    </table>
+  `;
+
+  scope.forEach(g => {
+    const delBtn = zone.querySelector(`[data-del="${g.id}"]`);
+    if (delBtn) delBtn.addEventListener('click', () => confirmDeleteGuest(g));
+    const resetBtn = zone.querySelector(`[data-reset="${g.id}"]`);
+    if (resetBtn) resetBtn.addEventListener('click', () => confirmResetRsvp(g));
+    const editBtn = zone.querySelector(`[data-edit="${g.id}"]`);
+    if (editBtn) editBtn.addEventListener('click', () => openEditGuestModal(g));
+    const msgBtn = zone.querySelector(`[data-msg="${g.id}"]`);
+    if (msgBtn) msgBtn.addEventListener('click', () => showMessage(g));
+  });
+
+  zone.querySelectorAll('.row-chk').forEach(chk => {
+    chk.addEventListener('change', () => {
+      if (chk.checked) selectedIds.add(chk.dataset.id);
+      else selectedIds.delete(chk.dataset.id);
+      updateBulkBar();
+      syncSelectAllCheckbox();
+    });
+  });
+
+  const selectAllChk = document.getElementById('selectAllChk');
+  if (selectAllChk){
+    selectAllChk.addEventListener('change', () => {
+      if (selectAllChk.checked) lastVisibleScope.forEach(id => selectedIds.add(id));
+      else lastVisibleScope.forEach(id => selectedIds.delete(id));
+      renderTable(); // simplest correct way to reflect the bulk toggle in every row checkbox
+      updateBulkBar();
+    });
+    syncSelectAllCheckbox();
+  }
+
+  updateBulkBar();
+}
+
+function syncSelectAllCheckbox(){
+  const selectAllChk = document.getElementById('selectAllChk');
+  if (!selectAllChk || lastVisibleScope.length === 0) return;
+  const allSelected = lastVisibleScope.every(id => selectedIds.has(id));
+  selectAllChk.checked = allSelected;
+  selectAllChk.indeterminate = !allSelected && lastVisibleScope.some(id => selectedIds.has(id));
+}
+
+function rowHtml(g){
+  let statusPill = `<span class="pill pending"><span class="pill-dot"></span>Pending</span>`;
+  if (g.rsvp_status === 'yes') statusPill = `<span class="pill yes"><span class="pill-dot"></span>Attending</span>`;
+  else if (g.rsvp_status === 'no') statusPill = `<span class="pill no"><span class="pill-dot"></span>Declined</span>`;
+
+  const displayName = g.title ? `${esc(g.title)} ${esc(g.name)}` : esc(g.name);
+
+  // "3 / 4" while attending, "0 / 4" while declined, "—" while pending
+  let attendingCell = '<span class="badge muted">—</span>';
+  if (g.rsvp_status === 'yes') attendingCell = `${g.attending_count ?? 0} / ${g.invited_count}`;
+  else if (g.rsvp_status === 'no') attendingCell = `0 / ${g.invited_count}`;
+
+  let liquorCell = '<span class="badge muted">—</span>';
+  if (g.liquor === 'yes') liquorCell = '<span class="badge yes">Yes</span>';
+  else if (g.liquor === 'no') liquorCell = '<span class="badge no">No</span>';
+
+  const hasMessage = !!(g.guest_message && g.guest_message.trim());
+  const messageCell = hasMessage
+    ? `<button class="msg-btn" data-msg="${g.id}">View</button>`
+    : `<span class="badge muted">—</span>`;
+
+  return `
+    <tr>
+      <td class="cell-name" data-label="Name"><label class="row-select"><input type="checkbox" class="row-chk" data-id="${g.id}" ${selectedIds.has(g.id) ? 'checked' : ''}><span>${displayName}</span></label></td>
+      <td data-label="Side" style="text-transform:capitalize">${esc(g.side)}</td>
+      <td data-label="Invited">${g.invited_count}</td>
+      <td data-label="Status">${statusPill}</td>
+      <td data-label="Attending">${attendingCell}</td>
+      <td data-label="Liquor">${liquorCell}</td>
+      <td data-label="Message">${messageCell}</td>
+      <td class="cell-actions" data-label="Actions">
+        <div class="row-actions">
+          <button class="icon-btn" data-edit="${g.id}" title="Edit">✎</button>
+          ${g.rsvp_status ? `<button class="icon-btn" data-reset="${g.id}" title="Reset RSVP">↺</button>` : ''}
+          <button class="icon-btn danger" data-del="${g.id}" title="Delete">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+/* ---------- message modal ---------- */
+function showMessage(g){
+  document.getElementById('msgModalName').textContent = g.title ? `${g.title} ${g.name}` : g.name;
+  const textEl = document.getElementById('msgModalText');
+  const hasMessage = !!(g.guest_message && g.guest_message.trim());
+  textEl.textContent = hasMessage ? g.guest_message : 'No message provided.';
+  textEl.classList.toggle('empty', !hasMessage);
+  document.getElementById('msgModalOverlay').classList.add('open');
+}
+function closeMessageModal(){
+  document.getElementById('msgModalOverlay').classList.remove('open');
+}
+
+/* ---------- add / edit guest modal ---------- */
+function openAddGuestModal(){
+  editingGuestId = null;
+  document.getElementById('guestFormTitle').textContent = 'Add Guest';
+  document.getElementById('guestFormSubmit').textContent = 'Add Guest';
+  document.getElementById('gf-name').value = '';
+  document.getElementById('gf-count').value = '1';
+  document.getElementById('gf-side').value = 'bride';
+  document.getElementById('gf-relationship').value = '';
+  document.getElementById('guestFormOverlay').classList.add('open');
+  document.getElementById('gf-name').focus();
+}
+function openEditGuestModal(g){
+  editingGuestId = g.id;
+  document.getElementById('guestFormTitle').textContent = 'Edit Guest';
+  document.getElementById('guestFormSubmit').textContent = 'Save Changes';
+  document.getElementById('gf-name').value = g.name || '';
+  document.getElementById('gf-count').value = g.invited_count || 1;
+  document.getElementById('gf-side').value = g.side || 'bride';
+  document.getElementById('gf-relationship').value = g.relationship || '';
+  document.getElementById('guestFormOverlay').classList.add('open');
+  document.getElementById('gf-name').focus();
+}
+function closeGuestFormModal(){
+  document.getElementById('guestFormOverlay').classList.remove('open');
+}
+async function submitGuestForm(){
+  const name = document.getElementById('gf-name').value.trim();
+  const count = parseInt(document.getElementById('gf-count').value, 10) || 1;
+  const side = document.getElementById('gf-side').value;
+  const relationship = document.getElementById('gf-relationship').value || null;
+  if (!name){ alert('Please enter a guest name.'); return; }
+
+  if (editingGuestId === null){
+    // existing insert shape preserved (title left blank — can still be set later directly in the DB if needed)
+    const { error } = await sb.from('guests').insert({ title: '', name, invited_count: count, side, relationship });
+    if (error){ alert('Could not add guest: ' + error.message); console.error(error); return; }
+  } else {
+    const { error } = await sb.from('guests').update({ name, invited_count: count, side, relationship }).eq('id', editingGuestId);
+    if (error){ alert('Could not update guest: ' + error.message); console.error(error); return; }
+  }
+  closeGuestFormModal();
+  fetchGuests();
+}
+
+/* ---------- confirm modal (delete / reset) ---------- */
+let pendingConfirmAction = null;
+function openConfirmModal({ title, bodyHtml, confirmLabel, onConfirm }){
+  document.getElementById('confirmModalTitle').textContent = title;
+  document.getElementById('confirmModalBody').innerHTML = bodyHtml;
+  document.getElementById('confirmModalConfirm').textContent = confirmLabel;
+  pendingConfirmAction = onConfirm;
+  document.getElementById('confirmModalOverlay').classList.add('open');
+}
+function closeConfirmModal(){
+  document.getElementById('confirmModalOverlay').classList.remove('open');
+  pendingConfirmAction = null;
+}
+
+function confirmDeleteGuest(g){
+  const displayName = g.title ? `${esc(g.title)} ${esc(g.name)}` : esc(g.name);
+  openConfirmModal({
+    title: 'Delete guest?',
+    bodyHtml: `Are you sure you want to remove <strong>${displayName}</strong>?<br>This action cannot be undone.`,
+    confirmLabel: 'Delete',
+    onConfirm: () => deleteGuest(g)
+  });
+}
+function confirmResetRsvp(g){
+  const displayName = g.title ? `${esc(g.title)} ${esc(g.name)}` : esc(g.name);
+  openConfirmModal({
+    title: 'Reset RSVP response?',
+    bodyHtml: `This will return <strong>${displayName}</strong> to Pending status.`,
+    confirmLabel: 'Reset RSVP',
+    onConfirm: () => resetRsvp(g)
+  });
+}
+
+/* ---------- bulk select / delete ---------- */
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  const countEl = document.getElementById('bulkCount');
+  if (selectedIds.size > 0){
+    bar.classList.add('visible');
+    countEl.textContent = selectedIds.size + (selectedIds.size === 1 ? ' guest selected' : ' guests selected');
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function clearSelection(){
+  selectedIds.clear();
+  renderTable();
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('visible'), 3200);
+}
+
+function startBulkDeleteFlow(){
+  const ids = Array.from(selectedIds);
+  if (ids.length === 0) return;
+  const guests = allGuests.filter(g => ids.includes(g.id));
+  // any trace of a submitted RSVP — status, headcount, liquor choice, message, or timestamp
+  const withRsvp = guests.filter(g =>
+    g.rsvp_status || g.attending_count != null || g.liquor || (g.guest_message && g.guest_message.trim()) || g.responded_at
+  );
+
+  if (withRsvp.length > 0){
+    openConfirmModal({
+      title: 'Warning',
+      bodyHtml: `<strong>${withRsvp.length}</strong> of the selected guests have already submitted RSVP responses.<br><br>Deleting them will permanently remove those guest records and their stored RSVP information.`,
+      confirmLabel: 'Delete Anyway',
+      onConfirm: () => performBulkDelete(ids)
+    });
+  } else {
+    openConfirmModal({
+      title: 'Delete selected guests?',
+      bodyHtml: `You are about to delete <strong>${ids.length}</strong> guest${ids.length === 1 ? '' : 's'}.<br>This action cannot be undone.`,
+      confirmLabel: 'Delete Guests',
+      onConfirm: () => performBulkDelete(ids)
+    });
+  }
+}
+
+async function performBulkDelete(ids){
+  // deletes ONLY the exact selected Supabase record ids — never by name, filter, side, or index
+  const { error } = await sb.from('guests').delete().in('id', ids);
+  if (error){ alert('Could not delete selected guests: ' + error.message); return; }
+  selectedIds.clear();
+  showToast(`${ids.length} guest${ids.length === 1 ? '' : 's'} deleted successfully.`);
+  fetchGuests();
+}
+
+/* ============================================================
+   IMPORT GUEST LIST
+   Flow: upload → read → validate → preview → confirm → import
+   Existing guests are only ever read for duplicate-checking — this
+   feature exclusively INSERTs brand-new rows and never updates or
+   resets any existing guest, so RSVP data already collected is safe.
+   ============================================================ */
+let importState = null;   // validated rows held between the preview/confirm/result steps
+let xlsxLoaderPromise = null; // lazy-loads the XLSX reader only if an .xlsx file is actually chosen
+let exceljsLoaderPromise = null; // lazy-loads the Excel *writer* only if the Excel report is actually requested
+
+function ensureExcelJsLib(){
+  if (window.ExcelJS) return Promise.resolve();
+  if (exceljsLoaderPromise) return exceljsLoaderPromise;
+  exceljsLoaderPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Could not load the Excel report library.'));
+    document.head.appendChild(s);
+  });
+  return exceljsLoaderPromise;
+}
+
+function openImportModal(){
+  importState = null;
+  renderImportUploadStep();
+  document.getElementById('importModalOverlay').classList.add('open');
+}
+function closeImportModal(){
+  document.getElementById('importModalOverlay').classList.remove('open');
+}
+
+function downloadImportTemplate(){
+  // example values only — never inserted into the database
+  const csv = 'name,title,invited_count,side\nKasun Perera,Mr,3,groom\nNadeesha Silva,Mrs,2,bride\n';
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'guest-import-template.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderImportUploadStep(){
+  const body = document.getElementById('importModalBody');
+  body.innerHTML = `
+    <div class="import-step-title">Import Guest List</div>
+    <div class="import-dropzone">
+      Choose a CSV or Excel (.xlsx) file with columns: <strong>name, title, invited_count, side</strong>
+      <div><input type="file" id="importFileInput" accept=".csv,.xlsx,.xls"></div>
+    </div>
+    <button class="import-template-link" id="downloadTemplateBtn">Download Template</button>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn ghost" id="importCancelBtn">Cancel</button>
+    </div>
+  `;
+  document.getElementById('downloadTemplateBtn').addEventListener('click', downloadImportTemplate);
+  document.getElementById('importCancelBtn').addEventListener('click', closeImportModal);
+  document.getElementById('importFileInput').addEventListener('change', handleImportFileSelected);
+}
+
+async function handleImportFileSelected(e){
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const body = document.getElementById('importModalBody');
+  body.innerHTML = `<div class="import-step-title">Import Guest List</div><div class="loading">Reading file…</div>`;
+
+  try {
+    let rows;
+    if (/\.xlsx?$/i.test(file.name)){
+      rows = await parseXlsxFile(file);
+    } else {
+      const text = await file.text();
+      rows = parseCsvText(text);
+    }
+    importState = validateAndDedupeRows(rows);
+    renderImportPreviewStep();
+  } catch (err){
+    console.error(err);
+    body.innerHTML = `
+      <div class="import-step-title">Import Guest List</div>
+      <div class="modal-body">Couldn't read that file. Please check it's a valid CSV or Excel file and try again.</div>
+      <div class="modal-actions"><button class="btn ghost" id="importBackBtn">Back</button></div>
+    `;
+    document.getElementById('importBackBtn').addEventListener('click', renderImportUploadStep);
+  }
+}
+
+/* ---------- lightweight CSV parser (quoted fields / embedded commas safe) ---------- */
+function parseCsvText(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  const pushField = () => { row.push(field); field = ''; };
+  const pushRow = () => { pushField(); rows.push(row); row = []; };
+
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (inQuotes){
+      if (c === '"'){
+        if (text[i+1] === '"'){ field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') pushField();
+      else if (c === '\n') pushRow();
+      else if (c === '\r'){ /* ignore — \n handles the line break */ }
+      else field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) pushRow();
+
+  const nonEmpty = rows.filter(r => r.some(cell => cell.trim() !== ''));
+  if (nonEmpty.length === 0) return [];
+  const header = nonEmpty[0].map(h => h.trim().toLowerCase());
+  return nonEmpty.slice(1).map(r => {
+    const obj = {};
+    header.forEach((h, i) => { obj[h] = (r[i] ?? '').trim(); });
+    return obj;
+  });
+}
+
+/* ---------- XLSX support — SheetJS, loaded only if an .xlsx/.xls file is actually chosen ---------- */
+function ensureXlsxLib(){
+  if (window.XLSX) return Promise.resolve();
+  if (xlsxLoaderPromise) return xlsxLoaderPromise;
+  xlsxLoaderPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Could not load the Excel file reader.'));
+    document.head.appendChild(s);
+  });
+  return xlsxLoaderPromise;
+}
+
+async function parseXlsxFile(file){
+  await ensureXlsxLib();
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array' });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  return json.map(r => {
+    const obj = {};
+    Object.keys(r).forEach(k => { obj[k.trim().toLowerCase()] = String(r[k]).trim(); });
+    return obj;
+  });
+}
+
+/* ---------- validation + duplicate detection ---------- */
+function normalizeNameSide(name, side){
+  return name.trim().toLowerCase().replace(/\s+/g, ' ') + '|' + side;
+}
+
+function validateAndDedupeRows(rawRows){
+  const existingKeys = new Set(allGuests.map(g => normalizeNameSide(g.name, g.side)));
+  const seenInFile = new Set(); // catches duplicates within the uploaded file itself, not just against the DB
+  const results = [];
+
+  rawRows.forEach(r => {
+    const name = (r.name || '').trim();
+    const title = (r.title || '').trim();
+    const relationship = (r.relationship || '').trim();
+    const sideRaw = (r.side || '').trim().toLowerCase();
+    const countRaw = (r.invited_count ?? '').toString().trim();
+
+    // a fully blank row is spreadsheet noise, not a validation failure — skip it silently
+    if (!name && !sideRaw && !countRaw) return;
+
+    const reasons = [];
+    if (!name) reasons.push('Missing guest name');
+
+    let invited_count = null;
+    if (countRaw === '') reasons.push('Missing invited count');
+    else {
+      const n = Number(countRaw);
+      if (!Number.isInteger(n) || n <= 0) reasons.push('Invalid invited count');
+      else invited_count = n;
+    }
+
+    let side = null;
+    if (!VALID_SIDES.includes(sideRaw)) reasons.push('Invalid side');
+    else side = sideRaw;
+
+    const row = { name, title, relationship, invited_count, side, sideRawDisplay: sideRaw };
+
+    if (reasons.length > 0){
+      results.push({ ...row, status: 'invalid', reasons });
+      return;
+    }
+
+    const key = normalizeNameSide(name, side);
+    if (existingKeys.has(key) || seenInFile.has(key)){
+      results.push({ ...row, status: 'duplicate', reasons: ['Matches an existing guest'] });
+      return;
+    }
+
+    seenInFile.add(key);
+    results.push({ ...row, status: 'valid', reasons: [] });
+  });
+
+  return results;
+}
+
+function renderImportPreviewStep(){
+  const valid = importState.filter(r => r.status === 'valid');
+  const invalid = importState.filter(r => r.status === 'invalid');
+  const dup = importState.filter(r => r.status === 'duplicate');
+
+  const body = document.getElementById('importModalBody');
+  body.innerHTML = `
+    <div class="import-step-title">Import Preview</div>
+    <div class="import-summary-row">
+      <div class="import-summary-chip"><div class="n">${importState.length}</div><div class="l">Rows Found</div></div>
+      <div class="import-summary-chip"><div class="n">${valid.length}</div><div class="l">Valid</div></div>
+      <div class="import-summary-chip"><div class="n">${dup.length}</div><div class="l">Duplicates</div></div>
+      <div class="import-summary-chip"><div class="n">${invalid.length}</div><div class="l">Invalid</div></div>
+    </div>
+    <div class="import-preview-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Title</th><th>Relationship</th><th>Invited</th><th>Side</th><th>Status</th></tr></thead>
+        <tbody>
+          ${importState.map(r => `
+            <tr>
+              <td>${esc(r.name || '—')}</td>
+              <td>${esc(r.title || '—')}</td>
+              <td>${esc(r.relationship || '—')}</td>
+              <td>${r.invited_count ?? '—'}</td>
+              <td style="text-transform:capitalize">${esc(r.side || r.sideRawDisplay || '—')}</td>
+              <td>
+                ${r.status === 'valid' ? '<span class="import-status-badge valid">Valid</span>' : ''}
+                ${r.status === 'duplicate' ? '<span class="import-status-badge dup">⚠️ Possible duplicate</span>' : ''}
+                ${r.status === 'invalid' ? '<span class="import-status-badge invalid">Invalid</span>' : ''}
+                ${r.reasons.length ? `<div class="import-reason">${r.reasons.map(esc).join(', ')}</div>` : ''}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-body" style="margin-bottom:14px;">
+      <strong>${valid.length}</strong> guest${valid.length === 1 ? '' : 's'} ready to import.
+      ${dup.length ? `${dup.length} possible duplicate${dup.length === 1 ? '' : 's'} will be skipped.` : ''}
+      ${invalid.length ? `${invalid.length} invalid row${invalid.length === 1 ? '' : 's'} will not be imported.` : ''}
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="importCancelBtn2">Cancel</button>
+      <button class="btn primary" id="importConfirmBtn" ${valid.length === 0 ? 'disabled' : ''}>Import ${valid.length} Guest${valid.length === 1 ? '' : 's'}</button>
+    </div>
+  `;
+  document.getElementById('importCancelBtn2').addEventListener('click', closeImportModal);
+  if (valid.length > 0){
+    document.getElementById('importConfirmBtn').addEventListener('click', renderImportConfirmStep);
+  }
+}
+
+function renderImportConfirmStep(){
+  const valid = importState.filter(r => r.status === 'valid');
+  const dup = importState.filter(r => r.status === 'duplicate');
+  const invalid = importState.filter(r => r.status === 'invalid');
+
+  const body = document.getElementById('importModalBody');
+  body.innerHTML = `
+    <div class="import-step-title">Ready to Import</div>
+    <div class="modal-body">
+      <strong>${valid.length}</strong> new guest${valid.length === 1 ? '' : 's'} will be added.<br>
+      ${dup.length ? `${dup.length} possible duplicate${dup.length === 1 ? '' : 's'} will be skipped.<br>` : ''}
+      ${invalid.length ? `${invalid.length} invalid row${invalid.length === 1 ? '' : 's'} will not be imported.` : ''}
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="importBackBtn2">Cancel</button>
+      <button class="btn primary" id="importFinalBtn">Import ${valid.length} Guest${valid.length === 1 ? '' : 's'}</button>
+    </div>
+  `;
+  document.getElementById('importBackBtn2').addEventListener('click', closeImportModal);
+  document.getElementById('importFinalBtn').addEventListener('click', runImport);
+}
+
+async function runImport(){
+  const valid = importState.filter(r => r.status === 'valid');
+  const dupCount = importState.filter(r => r.status === 'duplicate').length;
+  const invalidCount = importState.filter(r => r.status === 'invalid').length;
+
+  const body = document.getElementById('importModalBody');
+  body.innerHTML = `<div class="import-step-title">Ready to Import</div><div class="loading">Importing guests…</div>`;
+
+  // brand-new rows only — rsvp_status/attending_count/liquor/guest_message/responded_at
+  // are intentionally left out, and no existing guest row is ever touched by this call
+  const payload = valid.map(r => ({
+    name: r.name, title: r.title || '', relationship: r.relationship || null, invited_count: r.invited_count, side: r.side
+  }));
+
+  const { error } = await sb.from('guests').insert(payload);
+  if (error){
+    body.innerHTML = `
+      <div class="import-step-title">Import Failed</div>
+      <div class="modal-body">Could not import guests: ${esc(error.message)}</div>
+      <div class="modal-actions"><button class="btn primary" id="importCloseErrBtn">Close</button></div>
+    `;
+    document.getElementById('importCloseErrBtn').addEventListener('click', closeImportModal);
+    console.error(error);
+    return;
+  }
+
+  renderImportResultStep(valid.length, dupCount, invalidCount);
+  fetchGuests();
+}
+
+function renderImportResultStep(added, dupCount, invalidCount){
+  const body = document.getElementById('importModalBody');
+  body.innerHTML = `
+    <div class="import-result-icon">✓</div>
+    <div class="import-result-text">
+      <div class="big">Import Complete</div>
+      <div class="small">
+        ${added} guest${added === 1 ? '' : 's'} added
+        ${dupCount ? `<br>${dupCount} duplicate${dupCount === 1 ? '' : 's'} skipped` : ''}
+        ${invalidCount ? `<br>${invalidCount} invalid row${invalidCount === 1 ? '' : 's'} skipped` : ''}
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn primary" id="importDoneBtn">Done</button>
+    </div>
+  `;
+  document.getElementById('importDoneBtn').addEventListener('click', closeImportModal);
+  showToast(`${added} guest${added === 1 ? '' : 's'} imported successfully.`);
+}
+
+/* ---------- data operations (Supabase logic unchanged) ---------- */
+async function deleteGuest(g){
+  const { error } = await sb.from('guests').delete().eq('id', g.id);
+  if (error){ alert('Could not delete: ' + error.message); return; }
+  fetchGuests();
+}
+
+async function resetRsvp(g){
+  const { error } = await sb.from('guests').update({
+    rsvp_status: null, attending_count: null, liquor: null, guest_message: null, responded_at: null
+  }).eq('id', g.id);
+  if (error){ alert('Could not reset: ' + error.message); return; }
+  fetchGuests();
+}
+
+function exportCsv(){
+  let scope = activeSide === 'all' ? allGuests : allGuests.filter(g => g.side === activeSide);
+  const header = ['Name','Title','Relationship','Side','Invited','Status','Attending','Liquor','Message','Responded At'];
+  const rows = scope.map(g => [
+    g.name, g.title || '', g.relationship || '', g.side, g.invited_count,
+    g.rsvp_status || 'pending', g.attending_count ?? '', g.liquor || '', g.guest_message || '', g.responded_at || ''
+  ]);
+  const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `rsvp-export-${activeSide}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   PREMIUM EXCEL RSVP MANAGEMENT REPORT
+   Read-only against Supabase — built entirely from the allGuests
+   array that fetchGuests() already loads for the on-screen panel.
+   Nothing here ever writes back to the database.
+   ============================================================ */
+
+const RELATIONSHIP_CATEGORIES = ['Member','Wife','Husband','Family','Guest'];
+const OTHER_RELATIONSHIP = 'Other / Blank';
+
+function normalizeRelationship(raw){
+  const v = (raw || '').trim();
+  if (!v) return OTHER_RELATIONSHIP;
+  const match = RELATIONSHIP_CATEGORIES.find(c => c.toLowerCase() === v.toLowerCase());
+  return match || OTHER_RELATIONSHIP;
+}
+function sumInvited(list){ return list.reduce((s,g) => s + (g.invited_count || 0), 0); }
+function pct(n){ return (Number.isFinite(n) ? n : 0).toFixed(2) + '%'; }
+
+// Guest Records = number of database rows. Invited People = SUM(invited_count).
+// These are kept as two distinct numbers everywhere in the report — never conflated.
+function statsFor(list){
+  const records = list.length;
+  const invited = sumInvited(list);
+  const respondedList = list.filter(g => !!g.rsvp_status);
+  const pendingList = list.filter(g => !g.rsvp_status);
+  const attendingList = list.filter(g => g.rsvp_status === 'yes');
+  const notAttendingList = list.filter(g => g.rsvp_status === 'no');
+  const expectedAttendance = attendingList.reduce((s,g) => s + (g.attending_count ?? g.invited_count ?? 0), 0);
+  const responseRate = records ? (respondedList.length / records) * 100 : 0;
+  return {
+    records, invited,
+    responded: respondedList.length, pending: pendingList.length,
+    attending: attendingList.length, notAttending: notAttendingList.length,
+    expectedAttendance, responseRate,
+    pendingList, attendingList, notAttendingList
+  };
+}
+
+function buildReportData(guests){
+  const bride = guests.filter(g => g.side === 'bride');
+  const groom = guests.filter(g => g.side === 'groom');
+  const overall = statsFor(guests);
+  const brideStats = statsFor(bride);
+  const groomStats = statsFor(groom);
+
+  const relBuckets = {};
+  [...RELATIONSHIP_CATEGORIES, OTHER_RELATIONSHIP].forEach(k => relBuckets[k] = []);
+  guests.forEach(g => relBuckets[normalizeRelationship(g.relationship)].push(g));
+  const relationshipRows = Object.entries(relBuckets).map(([label, list]) => ({ label, ...statsFor(list) }));
+
+  // Liquor is only a meaningful answer for guests who confirmed attendance —
+  // pending / not-attending guests are never counted as a liquor "No".
+  function liquorFor(list){
+    const attendingList = list.filter(g => g.rsvp_status === 'yes');
+    const yes = attendingList.filter(g => g.liquor === 'yes').length;
+    const no = attendingList.filter(g => g.liquor === 'no').length;
+    const pendingOrNA = list.length - yes - no;
+    return { yes, no, pendingOrNA };
+  }
+  const liquor = { bride: liquorFor(bride), groom: liquorFor(groom), overall: liquorFor(guests) };
+
+  const dataQuality = {
+    total: guests.length,
+    missingRelationship: guests.filter(g => !g.relationship || !String(g.relationship).trim()).length,
+    missingTitle: guests.filter(g => !g.title || !String(g.title).trim()).length,
+    missingSide: guests.filter(g => !g.side).length,
+    invalidInvited: guests.filter(g => !g.invited_count || g.invited_count <= 0).length,
+    invalidStatus: guests.filter(g => g.rsvp_status && !['yes','no'].includes(g.rsvp_status)).length,
+  };
+
+  return { overall, brideStats, groomStats, relationshipRows, liquor, dataQuality };
+}
+
+/* ---------- ExcelJS styling helpers ---------- */
+const XC = {
+  whiteCard:'FFFFFCF5', ivory:'FFF8F2E6', champagne:'FFEFE0BA',
+  gold:'FFA9823F', goldDeep:'FF8A6A30', ink:'FF2E2218', inkSoft:'FF5B4C39',
+  green:'FF4C6B34', greenBg:'FFE6EFDD', red:'FF9C4A3A', redBg:'FFF3E1DD',
+  line:'FFD9C9A3', white:'FFFFFFFF'
+};
+function xFill(argb){ return { type:'pattern', pattern:'solid', fgColor:{argb} }; }
+function thinBorder(argb){
+  const c = { style:'thin', color:{argb: argb || XC.line} };
+  return { top:c, left:c, bottom:c, right:c };
+}
+function styleRange(ws, r1,c1,r2,c2, {fillArgb, font, alignment, border, numFmt} = {}){
+  for(let r=r1;r<=r2;r++){
+    for(let c=c1;c<=c2;c++){
+      const cell = ws.getCell(r,c);
+      if (fillArgb) cell.fill = xFill(fillArgb);
+      if (font) cell.font = font;
+      if (alignment) cell.alignment = alignment;
+      if (border) cell.border = border;
+      if (numFmt) cell.numFmt = numFmt;
+    }
+  }
+}
+function mergeAndSet(ws, r1,c1,r2,c2, value, opts={}){
+  ws.mergeCells(r1,c1,r2,c2);
+  const cell = ws.getCell(r1,c1);
+  cell.value = value;
+  styleRange(ws, r1,c1,r2,c2, opts);
+  return cell;
+}
+function sectionTitle(ws, row, text, colEnd){
+  mergeAndSet(ws, row,1, row,colEnd || 8, text, {
+    fillArgb: XC.champagne,
+    font: { name:'Georgia', size:11, bold:true, color:{argb:XC.goldDeep} },
+    alignment: { horizontal:'left', vertical:'middle', indent:1 }
+  });
+  ws.getRow(row).height = 20;
+}
+function kpiCard(ws, row, colStart, label, value){
+  mergeAndSet(ws, row, colStart, row, colStart+1, value, {
+    fillArgb: XC.whiteCard,
+    font: { name:'Georgia', size:16, bold:true, color:{argb:XC.goldDeep} },
+    alignment: { horizontal:'center', vertical:'middle' },
+    border: thinBorder()
+  });
+  ws.getRow(row).height = 26;
+  mergeAndSet(ws, row+1, colStart, row+1, colStart+1, label.toUpperCase(), {
+    fillArgb: XC.whiteCard,
+    font: { name:'Calibri', size:8, bold:true, color:{argb:XC.inkSoft} },
+    alignment: { horizontal:'center', vertical:'middle' },
+    border: thinBorder()
+  });
+  ws.getRow(row+1).height = 15;
+}
+// small, self-contained data table used inside the Dashboard sheet
+// (distinct from the Excel Tables used on the 3 data sheets)
+function simpleTable(ws, startRow, startCol, headers, rows){
+  headers.forEach((h,i) => {
+    const cell = ws.getCell(startRow, startCol+i);
+    cell.value = h;
+    cell.fill = xFill(XC.goldDeep);
+    cell.font = { name:'Calibri', size:9, bold:true, color:{argb:XC.white} };
+    cell.alignment = { horizontal:'center', vertical:'middle' };
+    cell.border = thinBorder(XC.goldDeep);
+  });
+  rows.forEach((rowVals, ri) => {
+    const r = startRow + 1 + ri;
+    rowVals.forEach((v, ci) => {
+      const cell = ws.getCell(r, startCol+ci);
+      cell.value = (v === null || v === undefined || (typeof v === 'number' && Number.isNaN(v))) ? '' : v;
+      cell.font = { name:'Calibri', size:9.5, color:{argb:XC.ink} };
+      cell.alignment = { horizontal: ci===0 ? 'left' : 'center', vertical:'middle' };
+      cell.border = thinBorder();
+      cell.fill = xFill(ri % 2 === 0 ? XC.whiteCard : XC.ivory);
+    });
+  });
+  return startRow + rows.length;
+}
+// key/value list (used for Bride vs Groom and the Management Snapshot)
+function keyValueList(ws, startRow, startCol, pairs){
+  pairs.forEach((p, i) => {
+    const r = startRow + i;
+    const c1 = ws.getCell(r, startCol);
+    c1.value = p[0];
+    c1.font = { name:'Calibri', size:9.5, color:{argb:XC.inkSoft} };
+    c1.border = thinBorder();
+    c1.fill = xFill(i % 2 === 0 ? XC.whiteCard : XC.ivory);
+    const c2 = ws.getCell(r, startCol+1);
+    c2.value = p[1];
+    c2.font = { name:'Calibri', size:9.5, bold:true, color:{argb:XC.goldDeep} };
+    c2.alignment = { horizontal:'center' };
+    c2.border = thinBorder();
+    c2.fill = xFill(i % 2 === 0 ? XC.whiteCard : XC.ivory);
+  });
+  return startRow + pairs.length - 1;
+}
+// lightweight in-cell bar — kept intentionally as plain text/fills rather than a
+// native embedded Excel chart object or a conditionalFormatting data-bar rule,
+// see the implementation report for why.
+function barText(count, total, maxBlocks){
+  maxBlocks = maxBlocks || 16;
+  if (!total) return '';
+  const blocks = Math.max(0, Math.min(maxBlocks, Math.round((count/total) * maxBlocks)));
+  return '█'.repeat(blocks) + '·'.repeat(maxBlocks - blocks);
+}
+
+/* ---------- Sheet 1: Dashboard & Analysis ---------- */
+function buildDashboardSheet(wb, data, exportedAt){
+  const ws = wb.addWorksheet('Dashboard & Analysis');
+  ws.columns = [26,15,15,17,17,15,15,17].map(width => ({ width }));
+
+  let r = 1;
+  mergeAndSet(ws, r,1, r,8, 'DESHANI & CHALITHA', {
+    font:{ name:'Georgia', size:24, bold:true, color:{argb:XC.goldDeep} },
+    alignment:{ horizontal:'center', vertical:'middle' }
+  });
+  ws.getRow(r).height = 34; r++;
+
+  mergeAndSet(ws, r,1, r,8, 'RSVP MANAGEMENT DASHBOARD', {
+    font:{ name:'Georgia', size:14, bold:true, color:{argb:XC.ink} },
+    alignment:{ horizontal:'center' }
+  });
+  ws.getRow(r).height = 22; r++;
+
+  mergeAndSet(ws, r,1, r,8, 'Wedding RSVP Overview & Guest Analysis', {
+    font:{ name:'Calibri', italic:true, size:11, color:{argb:XC.inkSoft} },
+    alignment:{ horizontal:'center' }
+  }); r++;
+
+  r++;
+  mergeAndSet(ws, r,1, r,8, `LAST UPDATED:   ${exportedAt}`, {
+    font:{ name:'Calibri', italic:true, size:9, color:{argb:XC.inkSoft} },
+    alignment:{ horizontal:'right' }
+  }); r += 2;
+
+  // KPI cards (4 across x 2 rows)
+  const kpis = [
+    ['Total Guest Records', data.overall.records],
+    ['Total Invited People', data.overall.invited],
+    ['Responded', data.overall.responded],
+    ['Pending', data.overall.pending],
+    ['Attending', data.overall.attending],
+    ['Not Attending', data.overall.notAttending],
+    ['Response Rate', pct(data.overall.responseRate)],
+    ['Expected Attendance', data.overall.expectedAttendance],
+  ];
+  const kr = r;
+  kpis.forEach((k, i) => {
+    const col = 1 + (i % 4) * 2;
+    const row = kr + Math.floor(i / 4) * 2;
+    kpiCard(ws, row, col, k[0], k[1]);
+  });
+  r = kr + 5;
+
+  sectionTitle(ws, r, 'FILTER & EXPLORE THE DATA'); r++;
+  mergeAndSet(ws, r,1, r,8,
+    'True Excel Slicers were not used (see note below) — instead, every column on the "Guest Master", "RSVP Responses" and "Pending Guests" sheets has a built-in filter/sort arrow, so you can filter by Side, RSVP Status, Relationship or Liquor directly from the header row.',
+    { font:{ name:'Calibri', size:9, italic:true, color:{argb:XC.inkSoft} }, alignment:{ horizontal:'left', vertical:'middle', wrapText:true } }
+  );
+  ws.getRow(r).height = 30; r += 2;
+
+  // Bride vs Groom
+  sectionTitle(ws, r, 'BRIDE VS GROOM'); r++;
+  mergeAndSet(ws, r,1, r,2, 'BRIDE SIDE', { fillArgb:XC.champagne, font:{ name:'Georgia', italic:true, bold:true, size:11, color:{argb:XC.goldDeep} }, alignment:{ horizontal:'center' } });
+  mergeAndSet(ws, r,5, r,6, 'GROOM SIDE', { fillArgb:XC.champagne, font:{ name:'Georgia', italic:true, bold:true, size:11, color:{argb:XC.goldDeep} }, alignment:{ horizontal:'center' } });
+  r++;
+  const metricLabels = ['Guest Records','Invited People','Responded','Pending','Attending','Not Attending','Response Rate','Expected Attendance'];
+  const brideVals = [data.brideStats.records, data.brideStats.invited, data.brideStats.responded, data.brideStats.pending, data.brideStats.attending, data.brideStats.notAttending, pct(data.brideStats.responseRate), data.brideStats.expectedAttendance];
+  const groomVals = [data.groomStats.records, data.groomStats.invited, data.groomStats.responded, data.groomStats.pending, data.groomStats.attending, data.groomStats.notAttending, pct(data.groomStats.responseRate), data.groomStats.expectedAttendance];
+  keyValueList(ws, r, 1, metricLabels.map((l,i) => [l, brideVals[i]]));
+  keyValueList(ws, r, 5, metricLabels.map((l,i) => [l, groomVals[i]]));
+  r += metricLabels.length + 1;
+
+  // "Charts" — see implementation report re: native chart objects vs this approach
+  sectionTitle(ws, r, 'RSVP STATUS OVERVIEW  &  BRIDE VS GROOM COMPARISON'); r++;
+  const chartRow = r;
+  const statusRows = [
+    ['Pending', data.overall.pending],
+    ['Attending', data.overall.attending],
+    ['Not Attending', data.overall.notAttending],
+  ];
+  ['Status','Records','Share of Total'].forEach((h,i) => {
+    const cell = ws.getCell(chartRow, 1+i);
+    cell.value = h; cell.fill = xFill(XC.goldDeep);
+    cell.font = { name:'Calibri', size:9, bold:true, color:{argb:XC.white} };
+    cell.alignment = { horizontal:'center' }; cell.border = thinBorder(XC.goldDeep);
+  });
+  statusRows.forEach((row, i) => {
+    const rn = chartRow + 1 + i;
+    ws.getCell(rn,1).value = row[0];
+    ws.getCell(rn,2).value = row[1];
+    ws.getCell(rn,3).value = barText(row[1], data.overall.records);
+    ws.getCell(rn,1).font = { name:'Calibri', size:9.5, color:{argb:XC.ink} };
+    ws.getCell(rn,2).font = { name:'Calibri', size:9.5, bold:true, color:{argb:XC.goldDeep} };
+    ws.getCell(rn,2).alignment = { horizontal:'center' };
+    ws.getCell(rn,3).font = { name:'Consolas', size:9, color:{argb:XC.gold} };
+    [1,2,3].forEach(c => {
+      ws.getCell(rn,c).border = thinBorder();
+      ws.getCell(rn,c).fill = xFill(i % 2 === 0 ? XC.whiteCard : XC.ivory);
+    });
+  });
+  simpleTable(ws, chartRow, 5, ['Metric','Bride','Groom'], [
+    ['Invited', data.brideStats.invited, data.groomStats.invited],
+    ['Responded', data.brideStats.responded, data.groomStats.responded],
+    ['Pending', data.brideStats.pending, data.groomStats.pending],
+    ['Attending', data.brideStats.attending, data.groomStats.attending],
+  ]);
+  r = chartRow + 5;
+
+  // Relationship analysis
+  sectionTitle(ws, r, 'RELATIONSHIP ANALYSIS'); r++;
+  const relRows = data.relationshipRows.map(row => [row.label, row.records, row.invited, row.responded, row.pending, row.attending, row.notAttending]);
+  r = simpleTable(ws, r, 1, ['Relationship','Records','Invited','Responded','Pending','Attending','Not Attending'], relRows) + 2;
+
+  // Liquor analysis
+  sectionTitle(ws, r, 'LIQUOR ANALYSIS  (attending guests only)'); r++;
+  r = simpleTable(ws, r, 1, ['Side','Liquor Yes','Liquor No','Pending / Not Attending'], [
+    ['Bride', data.liquor.bride.yes, data.liquor.bride.no, data.liquor.bride.pendingOrNA],
+    ['Groom', data.liquor.groom.yes, data.liquor.groom.no, data.liquor.groom.pendingOrNA],
+  ]) + 2;
+
+  // Management snapshot
+  sectionTitle(ws, r, 'MANAGEMENT SNAPSHOT'); r++;
+  const largestPendingSide = data.brideStats.pending >= data.groomStats.pending
+    ? `Bride (${data.brideStats.pending})` : `Groom (${data.groomStats.pending})`;
+  const snapLeft = [
+    ['Overall Response Rate', pct(data.overall.responseRate)],
+    ['Bride Response Rate', pct(data.brideStats.responseRate)],
+    ['Groom Response Rate', pct(data.groomStats.responseRate)],
+    ['Total Pending Records', data.overall.pending],
+    ['Total Pending People', sumInvited(data.overall.pendingList)],
+  ];
+  const snapRight = [
+    ['Expected Attendance', data.overall.expectedAttendance],
+    ['Number Attending (records)', data.overall.attending],
+    ['Number Not Attending (records)', data.overall.notAttending],
+    ['Liquor Yes (attending guests)', data.liquor.overall.yes],
+    ['Largest Pending Side', largestPendingSide],
+  ];
+  keyValueList(ws, r, 1, snapLeft);
+  keyValueList(ws, r, 5, snapRight);
+  r += snapLeft.length + 1;
+
+  // Data quality
+  sectionTitle(ws, r, 'DATA QUALITY SUMMARY'); r++;
+  const dq = data.dataQuality;
+  const issues = dq.missingRelationship + dq.missingTitle + dq.missingSide + dq.invalidInvited + dq.invalidStatus;
+  if (issues === 0){
+    mergeAndSet(ws, r,1, r,8, 'No data quality issues identified.', {
+      font:{ name:'Calibri', italic:true, size:10, color:{argb:XC.green} },
+      alignment:{ horizontal:'left', vertical:'middle', indent:1 }
+    });
+    r++;
+  } else {
+    r = simpleTable(ws, r, 1, ['Check','Count'], [
+      ['Total Records', dq.total],
+      ['Missing Relationship', dq.missingRelationship],
+      ['Missing Title', dq.missingTitle],
+      ['Missing Side', dq.missingSide],
+      ['Invalid Invited Count', dq.invalidInvited],
+      ['Invalid RSVP Status', dq.invalidStatus],
+    ]) + 1;
+  }
+
+  ws.pageSetup = {
+    orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0,
+    margins:{ left:0.35, right:0.35, top:0.4, bottom:0.4, header:0.2, footer:0.2 },
+    printArea: `A1:H${r}`
+  };
+  return ws;
+}
+
+/* ---------- Sheets 2–4: Guest Master / RSVP Responses / Pending Guests ---------- */
+const STATUS_LABEL = { yes:'Attending', no:'Not Attending' };
+function statusLabel(g){ return g.rsvp_status ? (STATUS_LABEL[g.rsvp_status] || g.rsvp_status) : 'Pending'; }
+function statusFillArgb(g){ return g.rsvp_status === 'yes' ? XC.greenBg : g.rsvp_status === 'no' ? XC.redBg : XC.champagne; }
+function statusFontArgb(g){ return g.rsvp_status === 'yes' ? XC.green : g.rsvp_status === 'no' ? XC.red : XC.goldDeep; }
+function sideLabel(g){ return g.side ? (g.side.charAt(0).toUpperCase() + g.side.slice(1)) : ''; }
+
+function guestRowFull(g){
+  return [
+    g.name || '', g.title || '', g.relationship || '', sideLabel(g), g.invited_count ?? '',
+    statusLabel(g),
+    g.rsvp_status === 'yes' ? (g.attending_count ?? 0) : (g.rsvp_status === 'no' ? 0 : ''),
+    g.rsvp_status === 'yes' ? (g.liquor === 'yes' ? 'Yes' : (g.liquor === 'no' ? 'No' : '')) : '',
+    g.guest_message || '',
+    g.responded_at ? new Date(g.responded_at) : null
+  ];
+}
+function guestRowPending(g){
+  return [g.name || '', g.title || '', g.relationship || '', sideLabel(g), g.invited_count ?? ''];
+}
+
+function buildGuestTableSheet(wb, sheetName, tableName, guests, includeStatusCols){
+  const ws = wb.addWorksheet(sheetName, { views:[{ state:'frozen', ySplit:1 }] });
+  const headers = includeStatusCols
+    ? ['Name','Title','Relationship','Side','Invited','RSVP Status','Attending','Liquor','Message','Responded At']
+    : ['Name','Title','Relationship','Side','Invited'];
+  const rows = guests.map(g => includeStatusCols ? guestRowFull(g) : guestRowPending(g));
+
+  ws.addTable({
+    name: tableName,
+    ref: 'A1',
+    headerRow: true,
+    style: { theme:'TableStyleLight1', showRowStripes:true },
+    columns: headers.map(h => ({ name:h, filterButton:true })),
+    rows: rows.length ? rows : [headers.map(() => '')] // addTable needs at least one data row
+  });
+  if (rows.length === 0){
+    // the placeholder row above was only to keep the table valid — blank it back out
+    headers.forEach((h,i) => { ws.getCell(2, i+1).value = ''; });
+  }
+
+  const widthMap = { 'Name':26,'Title':8,'Relationship':14,'Side':9,'Invited':9,'RSVP Status':14,'Attending':11,'Liquor':9,'Message':40,'Responded At':20 };
+  headers.forEach((h,i) => { ws.getColumn(i+1).width = widthMap[h] || 14; });
+
+  headers.forEach((h,i) => {
+    const cell = ws.getCell(1, i+1);
+    cell.fill = xFill(XC.goldDeep);
+    cell.font = { name:'Calibri', size:9.5, bold:true, color:{argb:XC.white} };
+    cell.alignment = { horizontal:'center', vertical:'middle' };
+  });
+  ws.getRow(1).height = 20;
+
+  const statusColIdx = headers.indexOf('RSVP Status') + 1;
+  const respondedColIdx = headers.indexOf('Responded At') + 1;
+  const messageColIdx = headers.indexOf('Message') + 1;
+
+  guests.forEach((g, i) => {
+    const r = i + 2;
+    headers.forEach((h, ci) => {
+      const cell = ws.getCell(r, ci+1);
+      cell.font = { name:'Calibri', size:9.5, color:{argb:XC.ink} };
+      cell.alignment = { vertical:'middle', wrapText: h === 'Message', horizontal: (h === 'Invited' || h === 'Attending') ? 'center' : 'left' };
+    });
+    if (statusColIdx){
+      const sc = ws.getCell(r, statusColIdx);
+      sc.fill = xFill(statusFillArgb(g));
+      sc.font = { name:'Calibri', size:9.5, bold:true, color:{argb:statusFontArgb(g)} };
+      sc.alignment = { horizontal:'center', vertical:'middle' };
+    }
+    if (respondedColIdx){
+      const rc = ws.getCell(r, respondedColIdx);
+      if (rc.value instanceof Date) rc.numFmt = 'd mmm yyyy, h:mm AM/PM';
+    }
+    if (messageColIdx){
+      ws.getRow(r).height = (g.guest_message && g.guest_message.trim()) ? 30 : 18;
+    }
+  });
+
+  ws.pageSetup = { orientation:'landscape', fitToWidth:1, fitToHeight:0 };
+  return ws;
+}
+
+/* ---------- entry point ---------- */
+async function exportXlsxReport(){
+  if (!allGuests || allGuests.length === 0){
+    alert('No guest data to export yet.');
+    return;
+  }
+  const btn = document.getElementById('exportXlsxBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Building report…';
+  try{
+    await ensureExcelJsLib();
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Ceylon Wedding Studio';
+    wb.created = new Date();
+
+    const data = buildReportData(allGuests);
+    const exportedAt = new Date().toLocaleString('en-GB', {
+      day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true
+    });
+
+    buildDashboardSheet(wb, data, exportedAt);
+
+    const sortedAll = [...allGuests].sort((a,b) =>
+      (a.side||'').localeCompare(b.side||'') || (a.name||'').localeCompare(b.name||''));
+    const responded = sortedAll.filter(g => !!g.rsvp_status);
+    const pendingGuests = sortedAll.filter(g => !g.rsvp_status);
+
+    buildGuestTableSheet(wb, 'Guest Master', 'GuestMaster', sortedAll, true);
+    buildGuestTableSheet(wb, 'RSVP Responses', 'RSVPResponses', responded, true);
+    buildGuestTableSheet(wb, 'Pending Guests', 'PendingGuests', pendingGuests, false);
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'DESHANI & CHALITHA - RSVP MANAGEMENT REPORT.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Excel report downloaded.');
+  } catch(err){
+    console.error(err);
+    alert('Could not generate the Excel report: ' + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/chalitha-guests", "destination": "/index.html" },
+    { "source": "/deshani-guests", "destination": "/index.html" }
+  ]
+}
